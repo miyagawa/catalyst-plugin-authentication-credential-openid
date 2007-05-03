@@ -2,7 +2,7 @@ package Catalyst::Plugin::Authentication::Credential::OpenID;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Net::OpenID::Consumer;
 use LWPx::ParanoidAgent;
@@ -35,6 +35,7 @@ sub authenticate_openid {
         my $check_url = $identity->check_url(
             return_to  => $current . '?openid-check=1',
             trust_root => $current,
+            delayed_return => 1,
         );
         $c->res->redirect($check_url);
         return 0;
