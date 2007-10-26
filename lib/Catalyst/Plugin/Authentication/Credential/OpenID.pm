@@ -2,7 +2,7 @@ package Catalyst::Plugin::Authentication::Credential::OpenID;
 
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Net::OpenID::Consumer;
 use LWPx::ParanoidAgent;
@@ -17,7 +17,7 @@ sub setup {
 }
 
 sub authenticate_openid {
-    my($c) = @_;
+    my($c, $uri) = @_;
 
     my $config = $c->config->{authentication}->{openid};
 
@@ -27,7 +27,8 @@ sub authenticate_openid {
         consumer_secret => sub { $_[0] },
     );
 
-    if (my $uri = $c->req->param('claimed_uri')) {
+    my @try_params = qw( openid_url openid_identifier claimed_uri );
+    if ($uri ||= (grep defined, @{$c->req->params}{@try_params})[0]) {
         my $current = $c->req->uri;
         $current->query(undef); # no query
         my $identity = $csr->claimed_identity($uri)
@@ -83,6 +84,7 @@ __END__
     plugins
     rss
     url
+    URI
 
 =head1 NAME
 
@@ -120,7 +122,7 @@ Catalyst::Plugin::Authentication::Credential::OpenID - OpenID credential for Cat
 
   # foo.tt
   <form action="[% c.uri_for('/signin_openid') %]" method="GET">
-  <input type="text" name="claimed_uri" class="openid" />
+  <input type="text" name="openid_url" class="openid" />
   <input type="submit" value="Sign in with OpenID" />
   </form>
 
@@ -144,6 +146,13 @@ authenticated.
 User class specified with I<user_class> config, which defaults to
 Catalyst::Plugin::Authentication::User::Hash, will be instantiated
 with the following parameters.
+
+By default, L<authenticate_openid> method looks for claimed URI
+parameter from the form field named C<openid_url>,
+C<openid_identifier> or C<claimed_uri>. If you want to use another
+form field name, call it like:
+
+  $c->authenticate_openid( $c->req->param('myopenid_param') );
 
 =over 8
 
